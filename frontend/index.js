@@ -2,9 +2,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch("http://localhost:3001/data");
         const data = await response.json();
-        let filteredData = [...data]; // Keep original data separate
+        let filteredData = [...data];
         const leaderboardBody = document.getElementById('leaderboard-body');
         const sectionFilter = document.getElementById('section-filter');
+        const searchInput = document.getElementById('search-input');
 
         // Populate section filter dropdown
         const populateSectionFilter = () => {
@@ -72,12 +73,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         // Filter function
-        const filterData = (section) => {
-            filteredData = section === 'all' 
-                ? [...data]
-                : data.filter(student => (student.section || 'N/A') === section);
+        const filterData = (section, searchTerm='') => {
+            filteredData = data.filter(student => {
+                const matchesSection = section === 'all' || (student.section || 'N/A') === section;
+                const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                      student.roll.toString().includes(searchTerm);
+                return matchesSection && matchesSearch;
+            });
             renderLeaderboard(filteredData);
         };
+        //chart(section -wise)
+        // var classname = ["D", "E", "C", "A(H)", "F"];
+        // var num = [55, 49, 44, 24, 15];
+        // var barColors = ["red", "green","blue","orange","brown"];
+        // new Chart("myChart", {
+        //     type: "pie",
+        //     data: {
+        //       labels: classname,
+        //       datasets: [{
+        //         backgroundColor: barColors,
+        //         data: num
+        //       }]
+        //     },
+        //     options: {
+        //       title: {
+        //         display: true,
+        //         text: "Section-wise pie-chart"
+        //       }
+        //     }
+        //   });
 
         // Sorting logic with ascending and descending functionality
         let totalSolvedDirection = 'desc';
@@ -86,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let hardSolvedDirection = 'desc';
         let sectionDirection = 'asc';
 
-        const sortData = (data, field, direction, isNumeric = false) => {
+        const sortData = (data, field, direction, isNumeric=false) => {
             return data.sort((a, b) => {
                 const valA = a[field] || (isNumeric ? 0 : 'Z');
                 const valB = b[field] || (isNumeric ? 0 : 'Z');
@@ -106,7 +130,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Event Listeners
         sectionFilter.addEventListener('change', (e) => {
-            filterData(e.target.value);
+            filterData(e.target.value, searchInput.value);
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            filterData(sectionFilter.value, e.target.value); // Pass both section and search term
         });
 
         document.getElementById('export-btn').addEventListener('click', () => {
